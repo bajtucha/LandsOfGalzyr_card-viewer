@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pl" class="font-size-default">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Karty 000–499 — Viewer</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="app">
+  <header class="topbar">
+    <div class="brand">
+      <img src="/assets/logo.png" alt="Logo" class="brand__logo-img" />
+      <span class="brand__name">Karty</span>
+    </div>
+
+    <div class="input-wrap">
+      <div id="display" class="display">___</div>
+      <button id="backspaceBtn" class="btn small" aria-label="Usuń ostatnią cyfrę">⌫</button>
+      <button id="clearBtn" class="btn small" aria-label="Wyczyść">Czyść</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <p id="error" class="error" hidden></p>
+
+    <section id="result" class="card-view" hidden>
+      <div class="card-media">
+        <img id="cardImage" src="" alt="" />
+      </div>
+      <div class="card-text">
+        <h1 id="cardTitle" class="paper-title">—</h1>
+        <div class="hr"></div>
+        <div class="paper">
+          <h3 class="paper-sub">Opis</h3>
+          <p id="descPL" class="paper-par">—</p>
+          <h3 class="paper-sub">Instrukcja</h3>
+          <p id="instrPL" class="paper-par">—</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- NUMPAD (ekranowa klawiatura) -->
+  <nav id="numpad" class="numpad" aria-label="Klawiatura numeryczna">
+    <button class="btn num" data-digit="1">1</button>
+    <button class="btn num" data-digit="2">2</button>
+    <button class="btn num" data-digit="3">3</button>
+    <button class="btn num" data-digit="4">4</button>
+    <button class="btn num" data-digit="5">5</button>
+    <button class="btn num" data-digit="6">6</button>
+    <button class="btn num" data-digit="7">7</button>
+    <button class="btn num" data-digit="8">8</button>
+    <button class="btn num" data-digit="9">9</button>
+    <button class="btn red num action-clear" data-action="clear" aria-label="Wyczyść">Czyść</button>
+    <button class="btn num" data-digit="0">0</button>
+    <button class="btn red num action-backspace" data-action="backspace" aria-label="Usuń">⌫</button>
+  </nav>
+
+  <!-- Overlay z siatką wariantów -->
+  <div id="variantOverlay" class="overlay hidden" aria-hidden="true">
+    <div class="variant-panel" role="dialog" aria-modal="true" aria-labelledby="variantTitle">
+      <div class="variant-header">
+        <h3 id="variantTitle" class="variant-title">Wybierz kartę</h3>
+        <button id="variantClose" class="btn red small" aria-label="Zamknij">✕</button>
+      </div>
+      <div id="variantGrid" class="variant-grid" role="listbox" aria-label="Warianty karty"></div>
+      <div class="variant-footer">
+        <button id="variantCancel" class="btn red">Anuluj</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/main.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "cards-viewer",
+  "version": "1.0.0",
+  "description": "Przeglądarka kart 000–499 z CSV i podglądem obrazków + tłumaczeń.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "NODE_ENV=production node server.js"
+  },
+  "dependencies": {
+    "csv-parse": "^5.6.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "morgan": "^1.10.0"
+  }
+}
