@@ -1,3 +1,5 @@
+// server.js — serve from docs/ (PUBLIC_DIR) + cards from docs/cards by default
+
 import express from 'express';
 import morgan from 'morgan';
 import fs from 'fs';
@@ -12,12 +14,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 5173;
-const CARDS_CSV = process.env.CARDS_CSV || path.join(__dirname, 'data', 'cards.csv');
-const CARDS_DIR = process.env.CARDS_DIR || path.join(__dirname, 'public', 'cards');
+
+// === Ścieżki konfigurowalne ENV ===
+// PUBLIC_DIR: skąd serwować index.html i assets (domyślnie docs/)
+// CARDS_DIR:  gdzie leżą obrazy kart (domyślnie <PUBLIC_DIR>/cards)
+// CARDS_CSV:  gdzie leży CSV z danymi kart (domyślnie data/cards.csv przy serwerze)
+const PUBLIC_DIR = process.env.PUBLIC_DIR || path.join(__dirname, 'docs');
+const CARDS_DIR  = process.env.CARDS_DIR  || path.join(PUBLIC_DIR, 'cards');
+const CARDS_CSV  = process.env.CARDS_CSV  || path.join(__dirname, 'data', 'cards.csv');
 
 const app = express();
 app.use(morgan('dev'));
-app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
+
+// Serwowanie statyków z PUBLIC_DIR (w tym index.html, styles.css, itd.)
+app.use(express.static(PUBLIC_DIR, { extensions: ['html'] }));
+
+// Jawny fallback na index.html pod ścieżką główną
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
 
 // ===== Pamięć: number -> [cards]
 let cardsByNumber = new Map();
@@ -79,7 +94,6 @@ loadCSV();
 
 // ===== Health
 app.get('/api/health', (_req, res) => {
-  // policz łączną liczbę wariantów
   let total = 0;
   for (const [, arr] of cardsByNumber) total += arr.length;
   res.json({ ok: true, numbers: cardsByNumber.size, total });
@@ -123,11 +137,10 @@ app.get('/api/card/:number', (req, res) => {
     return res.json(found);
   }
 
-  // jeśli tylko jeden wariant — zwróć, jeśli więcej — zwróć pierwszy (frontend i tak użyje /api/cards do wyboru)
   return res.json(variants[0]);
 });
 
-// ===== Serwuj katalog z obrazkami (public/cards)
+// ===== Serwuj katalog z obrazkami kart
 if (!fs.existsSync(CARDS_DIR)) {
   console.warn(`[WARN] Katalog kart nie istnieje: ${CARDS_DIR}`);
 }
@@ -135,4 +148,7 @@ app.use('/cards', express.static(CARDS_DIR));
 
 app.listen(PORT, () => {
   console.log(`▶ Server running on http://localhost:${PORT}`);
+  console.log(`[INFO] PUBLIC_DIR: ${PUBLIC_DIR}`);
+  console.log(`[INFO] CARDS_DIR:  ${CARDS_DIR}`);
+  console.log(`[INFO] CARDS_CSV:  ${CARDS_CSV}`);
 });
