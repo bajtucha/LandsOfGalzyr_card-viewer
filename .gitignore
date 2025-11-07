@@ -6,4 +6,4 @@ build/
 Thumbs.db
 .env
 *.log
-public/cards
+
