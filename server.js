@@ -15,13 +15,19 @@ const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 5173;
 
-// === Ścieżki konfigurowalne ENV ===
+// === Helper: absolutyzuj ścieżki z ENV ===
+function resolveMaybeRelative(baseAbs, p) {
+  if (!p) return baseAbs;
+  return path.isAbsolute(p) ? p : path.resolve(baseAbs, p);
+}
+
+// === Ścieżki konfigurowalne ENV (robione jako absolutne) ===
 // PUBLIC_DIR: skąd serwować index.html i assets (domyślnie docs/)
 // CARDS_DIR:  gdzie leżą obrazy kart (domyślnie <PUBLIC_DIR>/cards)
 // CARDS_CSV:  gdzie leży CSV z danymi kart (domyślnie data/cards.csv przy serwerze)
-const PUBLIC_DIR = process.env.PUBLIC_DIR || path.join(__dirname, 'docs');
-const CARDS_DIR  = process.env.CARDS_DIR  || path.join(PUBLIC_DIR, 'cards');
-const CARDS_CSV  = process.env.CARDS_CSV  || path.join(__dirname, 'data', 'cards.csv');
+const PUBLIC_DIR = resolveMaybeRelative(__dirname, process.env.PUBLIC_DIR || 'docs');
+const CARDS_DIR  = resolveMaybeRelative(PUBLIC_DIR, process.env.CARDS_DIR  || 'cards');
+const CARDS_CSV  = resolveMaybeRelative(__dirname, process.env.CARDS_CSV  || path.join('data', 'cards.csv'));
 
 const app = express();
 app.use(morgan('dev'));
@@ -57,7 +63,8 @@ function toRecord(row) {
   return {
     number: n,
     filename,
-    imageUrl: imageName ? `/cards/${imageName}` : '',
+    // UWAGA: względny URL (działa lokalnie i na GitHub Pages pod podścieżką)
+    imageUrl: imageName ? `cards/${imageName}` : '',
     card_name: normalized['card name'] ?? normalized['card_name'] ?? '',
     card_name_pl: normalized['card name_pl'] ?? normalized['card_name_pl'] ?? '',
     type: normalized['type'] ?? '',
