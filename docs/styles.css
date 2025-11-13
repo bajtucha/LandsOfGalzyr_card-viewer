@@ -491,8 +491,8 @@ img{display:block;max-width:100%}
   .card-text > h1.paper-title::before{
     content:"";
     display:block;
-    width:10.2em;      /* możesz tu ustawić swój rozmiar */
-    height:15.2em;
+    width:9.2em;      /* możesz tu ustawić swój rozmiar */
+    height:11.2em;
     background-image:var(--card-thumb);
     background-size:contain;
     background-repeat:no-repeat;
