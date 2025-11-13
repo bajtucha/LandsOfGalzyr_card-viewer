@@ -309,51 +309,87 @@ function isMobileWidth() {
  * Dodatkowo przy szerokości ≤768px układa tekst NAD obrazem.
  */
 function fitLayoutHeights() {
-  // 1) Reorder: mobile ⇄ desktop
+  // Reorder: mobile ⇄ desktop
   if (cardViewEl && cardMediaEl && cardTextEl) {
     if (isMobileWidth()) {
-      // tekst nad obrazkiem
       if (cardTextEl.nextElementSibling !== cardMediaEl) {
         cardViewEl.insertBefore(cardTextEl, cardMediaEl);
       }
     } else {
-      // obraz po lewej, tekst po prawej
       if (cardMediaEl.nextElementSibling !== cardTextEl) {
         cardViewEl.insertBefore(cardMediaEl, cardTextEl);
       }
     }
   }
 
-  // 2) policz realną wysokość widocznego obszaru
   const vv = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  const topbar = document.querySelector('.topbar');
-  const topH = topbar ? topbar.offsetHeight : 0;
-  const numH = els.numpad ? els.numpad.offsetHeight : 0;
+  const topH = document.querySelector('.topbar')?.offsetHeight ?? 0;
+  const numH = els.numpad?.offsetHeight ?? 0;
 
-  const extra = 16;
-  const avail = Math.max(140, vv - topH - numH - extra);
+  // kluczowa zmiana ↓↓↓
+  const extra = 6;   // BYŁO 16 — zmniejszamy bufor (to DA najwięcej przestrzeni!)
 
-  // 3) Tekst
-  if (paperEl) {
+  if (isMobileWidth() && paperEl) {
+    // gdzie zaczyna się kartka?
+    const paperRect = paperEl.getBoundingClientRect();
+
+    // "linia" nad klawiaturą
+    const safeBottom = vv - numH - extra;
+
+    // ile miejsca na kartkę?
+    let avail = safeBottom - paperRect.top;
+
+    // minimalna wysokość kartki
+    avail = Math.max(100, avail);
+
+    // ustawiamy dynamiczną wysokość kartki
     paperEl.style.maxHeight = `${avail}px`;
     paperEl.style.overflow = 'auto';
     paperEl.style.webkitOverflowScrolling = 'touch';
     paperEl.style.paddingRight = '8px';
+
+    // DUŻA ZMIANA: obrazek może być teraz większy
+    if (els.img) {
+      // im więcej miejsca, tym większy obraz
+      const maxImg = 260; // było 200–220
+      const minImg = 90;
+
+      const freeSpace = paperRect.top - topH - 4;   // od topbar do kartki
+      const imgH = Math.max(minImg, Math.min(maxImg, freeSpace * 0.85));
+
+      els.img.style.maxHeight = `${imgH}px`;
+      els.img.style.objectFit = 'contain';
+      els.img.style.width = '100%';
+      els.img.style.height = 'auto';
+    }
+
+    // miniaturka w tytule (zależnie od przestrzeni)
+        // miniaturka w tytule (zależnie od przestrzeni, ale ogólnie większa)
+    const maxThumb = 9.8;   // było 3.0
+    const minThumb = 11.2;   // było 1.6
+    const ratio = Math.max(0, Math.min(1, avail / 260));
+    const thumbSize = minThumb + (maxThumb - minThumb) * ratio;
+    document.documentElement.style.setProperty('--card-thumb-size', `${thumbSize}em`);
+
+    return;
   }
 
-  // 4) Obrazek
-  if (els.img) {
-    if (isMobileWidth()) {
-      const cap = Math.min(Math.max(100, Math.round(vv * 0.28)), 220);
-      els.img.style.maxHeight = `${cap}px`;     // mobile: mała miniaturka
-    } else {
-      els.img.style.maxHeight = `${avail}px`;   // desktop: dopasowana do dostępnej wysokości
-    }
-    els.img.style.objectFit = 'contain';
-    els.img.style.width = '100%';
-    els.img.style.height = 'auto';
+  // DESKTOP – bez zmian
+  const extraDesk = 12;
+  const availDesk = Math.max(140, vv - topH - numH - extraDesk);
+
+  if (paperEl) {
+    paperEl.style.maxHeight = `${availDesk}px`;
   }
+
+  if (els.img) {
+    els.img.style.maxHeight = `${availDesk}px`;
+  }
+
+  document.documentElement.style.removeProperty('--card-thumb-size');
 }
+
+
 
 // reaguj na zmiany wysokości/rotacji/pojawienia się klawiatury
 function bindViewportHandlers() {
