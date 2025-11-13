@@ -151,10 +151,11 @@ function fillCardUI(rec) {
   els.descPL.textContent = (rec.description_pl || rec.description || '—').trim();
   els.instrPL.textContent = (rec.instruction_pl || rec.instruction || '—').trim();
   els.img.src = rec.imageUrl || '';
+
   // ustaw miniaturę obok tytułu (tylko mobile CSS to użyje)
-if (rec.imageUrl) {
-  document.documentElement.style.setProperty('--card-thumb', `url(${rec.imageUrl})`);
-}
+  if (rec.imageUrl) {
+    document.documentElement.style.setProperty('--card-thumb', `url(${rec.imageUrl})`);
+  }
 
   els.img.alt = `${pad3(rec.number)} — ${title}`;
   els.result.hidden = false;
@@ -308,53 +309,31 @@ function isMobileWidth() {
  * Dodatkowo przy szerokości ≤768px układa tekst NAD obrazem.
  */
 function fitLayoutHeights() {
-  // Reorder: najpierw ustaw kolejność DOM na mobile/desktop
+  // 1) Reorder: mobile ⇄ desktop
   if (cardViewEl && cardMediaEl && cardTextEl) {
     if (isMobileWidth()) {
-      // tekst nad obrazkiem (reference image niżej)
+      // tekst nad obrazkiem
       if (cardTextEl.nextElementSibling !== cardMediaEl) {
         cardViewEl.insertBefore(cardTextEl, cardMediaEl);
       }
     } else {
-      // obraz po lewej, tekst po prawej — przywróć oryginalną kolejność
+      // obraz po lewej, tekst po prawej
       if (cardMediaEl.nextElementSibling !== cardTextEl) {
         cardViewEl.insertBefore(cardMediaEl, cardTextEl);
       }
     }
-    // tekst
-  if (paperEl) {
-    paperEl.style.maxHeight = `${avail}px`;
-    paperEl.style.overflow = 'auto';
-    paperEl.style.webkitOverflowScrolling = 'touch';
-    paperEl.style.paddingRight = '8px';
   }
 
-  // obrazek
-  if (els.img) {
-    if (isMobileWidth()) {
-      const cap = Math.min(Math.max(100, Math.round(vv * 0.28)), 220);
-      els.img.style.maxHeight = `${cap}px`;   // na mobile trzymamy małą miniaturę
-    } else {
-      // na desktopie NIE ustawiamy maxHeight w px — robi to CSS (100% ramki)
-      els.img.style.maxHeight = '';           // <— wyczyść ewentualną wartość z mobile
-    }
-    els.img.style.objectFit = 'contain';
-    els.img.style.width = 'auto';  // bo ramka ogranicza szerokość
-    els.img.style.height = 'auto';
-  }
-  }
-
-  // policz realną wysokość widocznego obszaru
+  // 2) policz realną wysokość widocznego obszaru
   const vv = window.visualViewport ? window.visualViewport.height : window.innerHeight;
   const topbar = document.querySelector('.topbar');
   const topH = topbar ? topbar.offsetHeight : 0;
   const numH = els.numpad ? els.numpad.offsetHeight : 0;
 
-  // trochę zapasu na odstępy/safe-area
   const extra = 16;
   const avail = Math.max(140, vv - topH - numH - extra);
 
-  // Tekst (paper) ma mieć max-height = avail (żeby cały był czytelny)
+  // 3) Tekst
   if (paperEl) {
     paperEl.style.maxHeight = `${avail}px`;
     paperEl.style.overflow = 'auto';
@@ -362,14 +341,13 @@ function fitLayoutHeights() {
     paperEl.style.paddingRight = '8px';
   }
 
-  // Obrazek: na mobile ograniczamy do ~28% widocznego viewportu i do 220px
+  // 4) Obrazek
   if (els.img) {
     if (isMobileWidth()) {
       const cap = Math.min(Math.max(100, Math.round(vv * 0.28)), 220);
-      els.img.style.maxHeight = `${cap}px`;
+      els.img.style.maxHeight = `${cap}px`;     // mobile: mała miniaturka
     } else {
-      // na większych ekranach obrazek może rosnąć, ale nie przekraczać avail
-      els.img.style.maxHeight = `${avail}px`;
+      els.img.style.maxHeight = `${avail}px`;   // desktop: dopasowana do dostępnej wysokości
     }
     els.img.style.objectFit = 'contain';
     els.img.style.width = '100%';
@@ -388,14 +366,24 @@ function bindViewportHandlers() {
 
 /* ======= init ======= */
 (async function init() {
+  renderBuffer();
+
+  // 1) najpierw CSV (osobny try/catch tylko do tego)
   try {
-    renderBuffer();
     await loadCSV();
-    bindUI();
-    bindViewportHandlers();
-    fitLayoutHeights(); // pierwsze dopasowanie
   } catch (err) {
     console.error(err);
     showError('Nie udało się wczytać danych (CSV). Sprawdź ścieżkę i nazwę pliku.');
+    return; // bez danych nie idziemy dalej
+  }
+
+  // 2) UI i layout
+  try {
+    bindUI();
+    bindViewportHandlers();
+    fitLayoutHeights();
+  } catch (err) {
+    console.error('[init/layout error]', err);
+    // tutaj świadomie NIE pokazujemy błędu "CSV"
   }
 })();
