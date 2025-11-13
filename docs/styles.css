@@ -306,3 +306,199 @@ img{display:block;max-width:100%}
 .numpad .btn{font-size:20px;}
 .numpad .action-clear,
 .numpad .action-backspace{font-size:18px;}
+/* ========== mobile-safe layout tokens ========== */
+:root{
+  --content-max-h: 60vh; /* fallback, JS nadpisze */
+}
+
+/* Główna kolumna z wynikiem: obraz + tekst obok/szeregowo */
+.card-view{
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+}
+
+/* ramka na kartę – niech ogranicza wysokość, a obraz skaluje się w środku */
+.card-media{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  /* jeśli masz tło/ramkę – zostaje bez zmian */
+  max-height: var(--content-max-h);   /* <— ważne */
+  overflow: hidden;                    /* bez “wyciekania” */
+}
+
+/* obraz dopasowany do ramki */
+.card-media img{
+  display:block;
+  max-width: 100%;
+  max-height: 100%;    /* <— klucz: do wysokości ramki */
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+
+/* Tekst (opis + instrukcja) ma swój własny scroll i stałą wysokość */
+.card-text .paper{
+  max-height: var(--content-max-h);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 8px; /* żeby nie obcinać shadowów */
+}
+
+/* Zadbaj o bezpieczny dół na iPhone (notch) */
+.content{
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+/* ===== MOBILE LAYOUT: miniatura obok tytułu ===== */
+@media (max-width: 768px){
+  .card-view{
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  /* mały nagłówek: miniatura + tytuł */
+  .card-text{
+    order: 1;
+  }
+
+  .card-text h1.paper-title{
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    font-size: 1.1em;
+    line-height: 1.2;
+    margin: 0.4em 0;
+  }
+
+  /* miniatura obok tytułu (mała, proporcjonalna) */
+  .card-text h1.paper-title::before{
+    content: "";
+    display: inline-block;
+    background-image: var(--card-thumb);
+    background-size: contain;
+    background-repeat: no-repeat;
+    width: 2.8em;   /* rozmiar miniatury */
+    height: 2.8em;
+    flex-shrink: 0;
+    border-radius: 6px;
+    box-shadow: 0 0 2px rgba(0,0,0,0.2);
+  }
+
+  /* ukrywamy duży obraz pod spodem — niepotrzebny duplikat */
+  .card-media{
+    display: none;
+ 
+  }
+
+  /* tekst przewijalny */
+  .card-text .paper{
+    max-height: 60dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+@media (max-width: 768px) {
+  /* zmniejsz odstęp od góry całej sekcji */
+  .content {
+    padding-top: 6px; /* było 14px, teraz ciaśniej */
+  }
+
+  /* ciaśniejszy układ sekcji karty */
+  .card-view {
+    gap: 4px; /* było 8 lub 16 */
+  }
+
+  /* tytuł bliżej górnej krawędzi */
+  .card-text h1.paper-title {
+    margin-top: 0.2em; /* było 0.4em */
+    margin-bottom: 0.3em;
+  }
+
+  /* jeśli nadal jest zbyt duży odstęp pod topbare */
+  .topbar {
+    padding-bottom: 4px; /* zmniejsz wysokość topbara */
+  }
+}
+/* MOBILE – zbicie pustej przestrzeni nad tytułem */
+@media (max-width: 768px){
+  .content{
+    /* przestań centrować pionowo i poziomo */
+    display:block;          /* zamiast grid */
+    height:auto;            /* bez sztucznej wysokości */
+    padding-top: 4px;       /* ciaśniej pod topbarem */
+    place-items: unset;     /* na wszelki wypadek */
+  }
+
+  .card-view{
+    gap:4px;
+    margin-top:0;           /* gdyby jakiś margin się doklejał */
+  }
+
+  .topbar{
+    padding-top:8px;
+    padding-bottom:4px;     /* odrobinę niższy pasek */
+  }
+
+  .card-text h1.paper-title{
+    margin: 0.1em 0 0.25em; /* minimalne marginesy tytułu */
+  }
+}
+@media (max-width: 768px){
+  .card-text h1.paper-title{
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    font-size: 1.1em;
+    line-height: 1.2;
+    margin: 0.4em 0;
+  }
+
+  .card-text h1.paper-title::before{
+    content: "";
+    display: inline-block;
+    background-image: var(--card-thumb);
+    background-size: contain;
+    background-repeat: no-repeat;
+    width: 2.8em;
+    height: 2.8em;
+    flex-shrink: 0;
+    border-radius: 6px;
+    box-shadow: 0 0 2px rgba(0,0,0,0.2);
+  }
+}
+
+
+
+
+/* MOBILE — miniatura OBOK tytułu, idealnie wyśrodkowana */
+@media (max-width: 768px){
+  .card-text > h1.paper-title{
+    width:100%;
+    display:flex !important;
+    flex-direction:row !important;       /* poziomo */
+    align-items:center !important;       /* pionowe wyśrodkowanie */
+    justify-content:center !important;   /* całość wycentrowana na środku */
+    text-align:center !important;
+    gap:0.6em;
+    margin:0.4em 0;
+  }
+
+  .card-text > h1.paper-title::before{
+    content:"";
+    display:block;
+    width:7.2em;      /* możesz tu ustawić swój rozmiar */
+    height:8.2em;
+    background-image:var(--card-thumb);
+    background-size:contain;
+    background-repeat:no-repeat;
+    background-position:center;
+    flex-shrink:0;
+    border-radius:8px;
+    box-shadow:0 0 2px rgba(0,0,0,.25);
+  }
+}
