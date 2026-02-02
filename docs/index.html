@@ -10,7 +10,11 @@
   <header class="topbar">
     <div class="brand">
       <img src="assets/logo.png" alt="Logo" class="brand__logo-img" />
-      <span class="brand__name">Karty</span>
+      <span id="brandName" class="brand__name">Karty</span>
+      <div class="lang-switch" role="group" aria-label="Język">
+        <button class="lang-btn" type="button" data-lang="pl" aria-label="Polski" title="Polski">🇵🇱</button>
+        <button class="lang-btn" type="button" data-lang="it" aria-label="Italiano" title="Italiano">🇮🇹</button>
+      </div>
     </div>
 
     <div class="input-wrap">
@@ -31,9 +35,9 @@
         <h1 id="cardTitle" class="paper-title">—</h1>
         <div class="hr"></div>
         <div class="paper">
-          <h3 class="paper-sub">Opis</h3>
+          <h3 id="descLabel" class="paper-sub">Opis</h3>
           <p id="descPL" class="paper-par">—</p>
-          <h3 class="paper-sub">Instrukcja</h3>
+          <h3 id="instrLabel" class="paper-sub">Instrukcja</h3>
           <p id="instrPL" class="paper-par">—</p>
         </div>
       </div>
@@ -50,7 +54,7 @@
     <button class="btn num" data-digit="7">7</button>
     <button class="btn num" data-digit="8">8</button>
     <button class="btn num" data-digit="9">9</button>
-    <button class="btn red num action-clear" data-action="clear" aria-label="Wyczyść">Czyść</button>
+    <button id="numpadClear" class="btn red num action-clear" data-action="clear" aria-label="Wyczyść">Czyść</button>
     <button class="btn num" data-digit="0">0</button>
     <button class="btn red num action-backspace" data-action="backspace" aria-label="Usuń">⌫</button>
   </nav>

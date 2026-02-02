@@ -9,16 +9,24 @@ const els = {
   title: document.getElementById('cardTitle'),
   descPL: document.getElementById('descPL'),
   instrPL: document.getElementById('instrPL'),
+  brandName: document.getElementById('brandName'),
+  descLabel: document.getElementById('descLabel'),
+  instrLabel: document.getElementById('instrLabel'),
   // overlay
   overlay: document.getElementById('variantOverlay'),
   grid: document.getElementById('variantGrid'),
   close: document.getElementById('variantClose'),
   cancel: document.getElementById('variantCancel'),
+  variantTitle: document.getElementById('variantTitle'),
   // header buttons
   backspaceBtn: document.getElementById('backspaceBtn'),
   clearBtn: document.getElementById('clearBtn'),
+  numpadClear: document.getElementById('numpadClear'),
   // numpad root
   numpad: document.getElementById('numpad'),
+  numpadBackspace: document.querySelector('.action-backspace'),
+  langButtons: document.querySelectorAll('.lang-btn'),
+  langSwitch: document.querySelector('.lang-switch'),
 };
 
 const cardViewEl = document.querySelector('.card-view');
@@ -30,6 +38,9 @@ const paperEl     = document.querySelector('.paper');
 let buffer = '';            // aktualnie wpisywane cyfry (0–3)
 let twoDigitTimer = null;   // timer auto-commit po 2 cyfrach
 let lastCommitted = null;   // ostatnio zatwierdzony numer "000"
+let lastShownRecord = null;
+let currentVariants = null;
+let lastErrorKey = null;
 
 let cardsMap = new Map();   // number -> [warianty]
 
@@ -44,6 +55,135 @@ function showError(msg = '') {
 function clearError() {
   els.error.hidden = true;
   els.error.textContent = '';
+  lastErrorKey = null;
+}
+
+const i18n = {
+  pl: {
+    ui: {
+      brand: 'Karty',
+      title: 'Karty 000–499 — Viewer',
+      clear: 'Czyść',
+      backspaceAria: 'Usuń ostatnią cyfrę',
+      clearAria: 'Wyczyść',
+      numpadAria: 'Klawiatura numeryczna',
+      numpadClearAria: 'Wyczyść',
+      backspaceAriaShort: 'Usuń',
+      desc: 'Opis',
+      instr: 'Instrukcja',
+      variantTitle: 'Wybierz kartę',
+      variantCloseAria: 'Zamknij',
+      variantGridAria: 'Warianty karty',
+      variantCancel: 'Anuluj',
+      langGroup: 'Język',
+    },
+    errors: {
+      invalidRange: 'Nieprawidłowy numer (0–499).',
+      outOfRange: 'Numer spoza zakresu (000–499).',
+      notFound: 'Brak karty dla tego numeru.',
+      csvLoad: 'Nie udało się wczytać danych (CSV). Sprawdź ścieżkę i nazwę pliku.',
+    },
+    fallbackTitle: n => `Karta ${pad3(n)}`,
+    fallbackVariant: idx => `Wariant ${idx + 1}`,
+  },
+  it: {
+    ui: {
+      brand: 'Carte',
+      title: 'Carte 000–499 — Viewer',
+      clear: 'Pulisci',
+      backspaceAria: 'Cancella ultima cifra',
+      clearAria: 'Pulisci',
+      numpadAria: 'Tastierino numerico',
+      numpadClearAria: 'Pulisci',
+      backspaceAriaShort: 'Cancella',
+      desc: 'Descrizione',
+      instr: 'Istruzioni',
+      variantTitle: 'Seleziona carta',
+      variantCloseAria: 'Chiudi',
+      variantGridAria: 'Varianti della carta',
+      variantCancel: 'Annulla',
+      langGroup: 'Lingua',
+    },
+    errors: {
+      invalidRange: 'Numero non valido (0–499).',
+      outOfRange: 'Numero fuori intervallo (000–499).',
+      notFound: 'Nessuna carta per questo numero.',
+      csvLoad: 'Impossibile caricare i dati (CSV). Controlla percorso e nome del file.',
+    },
+    fallbackTitle: n => `Carta ${pad3(n)}`,
+    fallbackVariant: idx => `Variante ${idx + 1}`,
+  },
+};
+
+let currentLang = 'pl';
+
+function getLang() {
+  const saved = window.localStorage.getItem('lang');
+  return i18n[saved] ? saved : 'pl';
+}
+
+function setLanguage(lang) {
+  if (!i18n[lang]) return;
+  currentLang = lang;
+  window.localStorage.setItem('lang', lang);
+
+  const t = i18n[lang];
+  document.documentElement.lang = lang;
+  document.title = t.ui.title;
+
+  if (els.brandName) els.brandName.textContent = t.ui.brand;
+  if (els.clearBtn) {
+    els.clearBtn.textContent = t.ui.clear;
+    els.clearBtn.setAttribute('aria-label', t.ui.clearAria);
+  }
+  if (els.numpadClear) {
+    els.numpadClear.textContent = t.ui.clear;
+    els.numpadClear.setAttribute('aria-label', t.ui.numpadClearAria);
+  }
+  if (els.backspaceBtn) els.backspaceBtn.setAttribute('aria-label', t.ui.backspaceAria);
+  if (els.numpadBackspace) els.numpadBackspace.setAttribute('aria-label', t.ui.backspaceAriaShort);
+  if (els.numpad) els.numpad.setAttribute('aria-label', t.ui.numpadAria);
+  if (els.descLabel) els.descLabel.textContent = t.ui.desc;
+  if (els.instrLabel) els.instrLabel.textContent = t.ui.instr;
+  if (els.variantTitle) els.variantTitle.textContent = t.ui.variantTitle;
+  if (els.cancel) els.cancel.textContent = t.ui.variantCancel;
+  if (els.close) els.close.setAttribute('aria-label', t.ui.variantCloseAria);
+  if (els.grid) els.grid.setAttribute('aria-label', t.ui.variantGridAria);
+  if (els.langSwitch) els.langSwitch.setAttribute('aria-label', t.ui.langGroup);
+
+  els.langButtons?.forEach(btn => {
+    const isActive = btn.getAttribute('data-lang') === lang;
+    btn.classList.toggle('is-active', isActive);
+  });
+
+  const hasError = !els.error.hidden;
+  if (hasError && lastErrorKey) {
+    showError(i18n[currentLang].errors[lastErrorKey] || '');
+  } else if (lastShownRecord) {
+    fillCardUI(lastShownRecord);
+  }
+  if (currentVariants) openVariants(currentVariants);
+}
+
+function getCardTitle(rec) {
+  if (currentLang === 'it') {
+    return (rec.card_name_it || rec.card_name_pl || rec.card_name || '').trim() || i18n.it.fallbackTitle(rec.number);
+  }
+  return (rec.card_name_pl || rec.card_name || '').trim() || i18n.pl.fallbackTitle(rec.number);
+}
+
+function getCardDesc(rec) {
+  if (currentLang === 'it') {
+    return (rec.description_it || rec.description_pl || rec.description || '—').trim();
+  }
+  return (rec.description_pl || rec.description || '—').trim();
+}
+
+function getCardInstr(rec) {
+  if (currentLang === 'it') {
+    return (rec.instruction_it || rec.instruction_pl || rec.instruction || '—').trim();
+  }
+  return (rec.instruction_pl || rec.instruction || '—').trim();
 }
 
 function renderBuffer() {
@@ -121,6 +261,9 @@ function recordFromRow(row) {
     instruction: norm['instruction'] ?? '',
     description_pl: norm['description_pl'] ?? '',
     instruction_pl: norm['instruction_pl'] ?? '',
+    card_name_it: norm['card_name_it'] ?? norm['card name_it'] ?? '',
+    description_it: norm['description_it'] ?? '',
+    instruction_it: norm['instruction_it'] ?? '',
     raw_text: norm['text'] ?? ''
   };
 }
@@ -146,11 +289,12 @@ async function loadCSV() {
 
 /* ======= UI render ======= */
 function fillCardUI(rec) {
-  const title = (rec.card_name_pl || rec.card_name || '').trim() || `Karta ${pad3(rec.number)}`;
+  const title = getCardTitle(rec);
   els.title.textContent = title;
-  els.descPL.textContent = (rec.description_pl || rec.description || '—').trim();
-  els.instrPL.textContent = (rec.instruction_pl || rec.instruction || '—').trim();
+  els.descPL.textContent = getCardDesc(rec);
+  els.instrPL.textContent = getCardInstr(rec);
   els.img.src = rec.imageUrl || '';
+  lastShownRecord = rec;
 
   // ustaw miniaturę obok tytułu (tylko mobile CSS to użyje)
   if (rec.imageUrl) {
@@ -167,6 +311,7 @@ function fillCardUI(rec) {
 
 /* ======= overlay ======= */
 function openVariants(variants) {
+  currentVariants = variants;
   els.grid.innerHTML = '';
   variants.forEach((v, idx) => {
     const btn = document.createElement('button');
@@ -174,10 +319,10 @@ function openVariants(variants) {
     btn.className = 'variant-item';
     const thumb = document.createElement('img');
     thumb.src = v.imageUrl || '';
-    thumb.alt = (v.card_name_pl || v.card_name || `Wariant ${idx + 1}`).trim();
+    thumb.alt = getCardTitle(v) || i18n[currentLang].fallbackVariant(idx);
     const cap = document.createElement('div');
     cap.className = 'variant-caption';
-    cap.textContent = (v.card_name_pl || v.card_name || '').trim() || `Wariant ${idx + 1}`;
+    cap.textContent = getCardTitle(v) || i18n[currentLang].fallbackVariant(idx);
     btn.appendChild(thumb);
     btn.appendChild(cap);
     btn.addEventListener('click', (e) => {
@@ -194,18 +339,21 @@ function openVariants(variants) {
 function closeVariants() {
   els.overlay.classList.add('hidden');
   els.overlay.setAttribute('aria-hidden', 'true');
+  currentVariants = null;
 }
 
 /* ======= logika wyszukiwania ======= */
 function resolveAndShow() {
   const n = Number(buffer.replace(/^0+/, '') || '0');
   if (!Number.isInteger(n) || n < 0 || n > 499) {
-    showError('Nieprawidłowy numer (0–499).');
+    lastErrorKey = 'invalidRange';
+    showError(i18n[currentLang].errors[lastErrorKey]);
     return;
   }
   const variants = cardsMap.get(n) || [];
   if (variants.length === 0) {
-    showError('Brak karty dla tego numeru.');
+    lastErrorKey = 'notFound';
+    showError(i18n[currentLang].errors[lastErrorKey]);
     return;
   }
   if (variants.length === 1) {
@@ -228,7 +376,10 @@ function pushDigit(d) {
 
   const n = Number(buffer);
   if (!Number.isInteger(n) || n < 0 || n > 499) {
-    if (buffer.length === 3) showError('Numer spoza zakresu (000–499).');
+    if (buffer.length === 3) {
+      lastErrorKey = 'outOfRange';
+      showError(i18n[currentLang].errors[lastErrorKey]);
+    }
     return;
   }
 
@@ -295,6 +446,15 @@ function bindUI() {
         resolveAndShow();
       }
     }
+  });
+
+  // przełącznik języka
+  els.langButtons?.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const lang = btn.getAttribute('data-lang');
+      if (lang) setLanguage(lang);
+    });
   });
 }
 
@@ -403,13 +563,15 @@ function bindViewportHandlers() {
 /* ======= init ======= */
 (async function init() {
   renderBuffer();
+  setLanguage(getLang());
 
   // 1) najpierw CSV (osobny try/catch tylko do tego)
   try {
     await loadCSV();
   } catch (err) {
     console.error(err);
-    showError('Nie udało się wczytać danych (CSV). Sprawdź ścieżkę i nazwę pliku.');
+    lastErrorKey = 'csvLoad';
+    showError(i18n[currentLang].errors[lastErrorKey]);
     return; // bez danych nie idziemy dalej
   }
 
