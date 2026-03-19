@@ -140,6 +140,33 @@ const i18n = {
     fallbackTitle: n => `Карта ${pad3(n)}`,
     fallbackVariant: idx => `Вариант ${idx + 1}`,
   },
+  de: {
+    ui: {
+      brand: 'Karten',
+      title: 'Karten 000–499 — Viewer',
+      clear: 'Löschen',
+      backspaceAria: 'Letzte Ziffer löschen',
+      clearAria: 'Löschen',
+      numpadAria: 'Nummerntastatur',
+      numpadClearAria: 'Löschen',
+      backspaceAriaShort: 'Löschen',
+      desc: 'Beschreibung',
+      instr: 'Anleitung',
+      variantTitle: 'Karte auswählen',
+      variantCloseAria: 'Schließen',
+      variantGridAria: 'Kartenvarianten',
+      variantCancel: 'Abbrechen',
+      langGroup: 'Sprache',
+    },
+    errors: {
+      invalidRange: 'Ungültige Nummer (0–499).',
+      outOfRange: 'Nummer außerhalb des Bereichs (000–499).',
+      notFound: 'Keine Karte für diese Nummer gefunden.',
+      csvLoad: 'Daten (CSV) konnten nicht geladen werden. Pfad und Dateiname prüfen.',
+    },
+    fallbackTitle: n => `Karte ${pad3(n)}`,
+    fallbackVariant: idx => `Variante ${idx + 1}`,
+  },
 };
 
 let currentLang = 'pl';
@@ -199,6 +226,9 @@ function getCardTitle(rec) {
   if (currentLang === 'it') {
     return (rec.card_name_it || rec.card_name_pl || rec.card_name || '').trim() || i18n.it.fallbackTitle(rec.number);
   }
+  if (currentLang === 'de') {
+    return (rec.card_name_de || rec.card_name || '').trim() || i18n.de.fallbackTitle(rec.number);
+  }
   return (rec.card_name_pl || rec.card_name || '').trim() || i18n.pl.fallbackTitle(rec.number);
 }
 
@@ -209,6 +239,9 @@ function getCardDesc(rec) {
   if (currentLang === 'it') {
     return (rec.description_it || rec.description_pl || rec.description || '—').trim();
   }
+  if (currentLang === 'de') {
+    return (rec.description_de || rec.description || '—').trim();
+  }
   return (rec.description_pl || rec.description || '—').trim();
 }
 
@@ -218,6 +251,9 @@ function getCardInstr(rec) {
   }
   if (currentLang === 'it') {
     return (rec.instruction_it || rec.instruction_pl || rec.instruction || '—').trim();
+  }
+  if (currentLang === 'de') {
+    return (rec.instruction_de || rec.instruction || '—').trim();
   }
   return (rec.instruction_pl || rec.instruction || '—').trim();
 }
@@ -303,6 +339,9 @@ function recordFromRow(row) {
     card_name_ru: norm['card_name_ru'] ?? norm['card name_ru'] ?? '',
     description_ru: norm['description_ru'] ?? '',
     instruction_ru: norm['instruction_ru'] ?? '',
+    card_name_de: norm['card_name_de'] ?? norm['card name_de'] ?? '',
+    description_de: norm['description_de'] ?? '',
+    instruction_de: norm['instruction_de'] ?? '',
     raw_text: norm['text'] ?? ''
   };
 }

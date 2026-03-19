@@ -72,6 +72,15 @@ function toRecord(row) {
     instruction: normalized['instruction'] ?? '',
     description_pl: normalized['description_pl'] ?? '',
     instruction_pl: normalized['instruction_pl'] ?? '',
+    card_name_it: normalized['card_name_it'] ?? normalized['card name_it'] ?? '',
+    description_it: normalized['description_it'] ?? '',
+    instruction_it: normalized['instruction_it'] ?? '',
+    card_name_ru: normalized['card_name_ru'] ?? normalized['card name_ru'] ?? '',
+    description_ru: normalized['description_ru'] ?? '',
+    instruction_ru: normalized['instruction_ru'] ?? '',
+    card_name_de: normalized['card_name_de'] ?? normalized['card name_de'] ?? '',
+    description_de: normalized['description_de'] ?? '',
+    instruction_de: normalized['instruction_de'] ?? '',
     raw_text: normalized['text'] ?? ''
   };
 }
