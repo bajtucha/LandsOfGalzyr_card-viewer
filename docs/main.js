@@ -167,6 +167,33 @@ const i18n = {
     fallbackTitle: n => `Karte ${pad3(n)}`,
     fallbackVariant: idx => `Variante ${idx + 1}`,
   },
+  zh: {
+    ui: {
+      brand: '卡牌',
+      title: '卡牌 000–499 — 查看器',
+      clear: '清除',
+      backspaceAria: '删除最后一位数字',
+      clearAria: '清除',
+      numpadAria: '数字键盘',
+      numpadClearAria: '清除',
+      backspaceAriaShort: '删除',
+      desc: '描述',
+      instr: '指令',
+      variantTitle: '选择卡牌',
+      variantCloseAria: '关闭',
+      variantGridAria: '卡牌变体',
+      variantCancel: '取消',
+      langGroup: '语言',
+    },
+    errors: {
+      invalidRange: '无效编号（0–499）。',
+      outOfRange: '编号超出范围（000–499）。',
+      notFound: '未找到该编号的卡牌。',
+      csvLoad: '无法加载数据（CSV）。请检查路径和文件名。',
+    },
+    fallbackTitle: n => `卡牌 ${pad3(n)}`,
+    fallbackVariant: idx => `变体 ${idx + 1}`,
+  },
 };
 
 let currentLang = 'pl';
@@ -229,6 +256,9 @@ function getCardTitle(rec) {
   if (currentLang === 'de') {
     return (rec.card_name_de || rec.card_name || '').trim() || i18n.de.fallbackTitle(rec.number);
   }
+  if (currentLang === 'zh') {
+    return (rec.card_name_zh || rec.card_name || '').trim() || i18n.zh.fallbackTitle(rec.number);
+  }
   return (rec.card_name_pl || rec.card_name || '').trim() || i18n.pl.fallbackTitle(rec.number);
 }
 
@@ -242,6 +272,9 @@ function getCardDesc(rec) {
   if (currentLang === 'de') {
     return (rec.description_de || rec.description || '—').trim();
   }
+  if (currentLang === 'zh') {
+    return (rec.description_zh || rec.description || '—').trim();
+  }
   return (rec.description_pl || rec.description || '—').trim();
 }
 
@@ -254,6 +287,9 @@ function getCardInstr(rec) {
   }
   if (currentLang === 'de') {
     return (rec.instruction_de || rec.instruction || '—').trim();
+  }
+  if (currentLang === 'zh') {
+    return (rec.instruction_zh || rec.instruction || '—').trim();
   }
   return (rec.instruction_pl || rec.instruction || '—').trim();
 }
@@ -342,6 +378,9 @@ function recordFromRow(row) {
     card_name_de: norm['card_name_de'] ?? norm['card name_de'] ?? '',
     description_de: norm['description_de'] ?? '',
     instruction_de: norm['instruction_de'] ?? '',
+    card_name_zh: norm['card_name_zh'] ?? norm['card name_zh'] ?? '',
+    description_zh: norm['description_zh'] ?? '',
+    instruction_zh: norm['instruction_zh'] ?? '',
     raw_text: norm['text'] ?? ''
   };
 }
